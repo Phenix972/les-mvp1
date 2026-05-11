@@ -15,12 +15,6 @@ jobs:
       matrix:
         php: ["8.4"]
 
-    services:
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +22,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: pdo_sqlite, redis, pcntl
+          extensions: pdo_sqlite, pcntl
           coverage: none
 
       - name: Cache Composer dependencies
@@ -41,14 +35,11 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-      - name: Copy .env
-        run: cp .env.example .env
-
-      - name: Generate key
-        run: php artisan key:generate
-
-      - name: Run migrations
-        run: php artisan migrate --no-interaction
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
 
       - name: PHP lint (syntax check)
         run: find app config routes -name "*.php" | xargs php -l
